@@ -15,4 +15,3 @@ spec:
       protocol: TCP
       port: 8161
       targetPort: 8161
-  type: ClusterIP
