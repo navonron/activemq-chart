@@ -1,5 +1,6 @@
-## @section service parameters
+## @section global parameters
 ##
-## @param url service queue url
+## @param global.url service url
 ##
-url: ""
+global:
+  url: ""

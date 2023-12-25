@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-conf
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    field.cattle.io/description: Configuration for ActiveMQ Broker
+data:
+  activemq.xml: |-
+    <beans
+      xmlns="http://www.springframework.org/schema/beans"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+      http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd">
+
+        <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+            <property name="locations">
+                <value>file:${activemq.conf}/credentials.properties</value>
+            </property>
+        </bean>
+
+        <bean id="logQuery" class="io.fabric8.insight.log.log4j.Log4jLogQuery"
+              lazy-init="false" scope="singleton"
+              init-method="start" destroy-method="stop">
+        </bean>
+
+        <broker xmlns="http://activemq.apache.org/schema/core" brokerName="localhost" useJmx="true" dataDirectory="${activemq.data}">
+
+            <destinationPolicy>
+                <policyMap>
+                  <policyEntries>
+                    <policyEntry topic=">" >
+                      <pendingMessageLimitStrategy>
+                        <constantPendingMessageLimitStrategy limit="1000"/>
+                      </pendingMessageLimitStrategy>
+                    </policyEntry>
+                  </policyEntries>
+                </policyMap>
+            </destinationPolicy>
+
+            <plugins>
+                <discardingDLQBrokerPlugin dropAll="true" dropTemporaryTopics="true" dropTemporaryQueues="true"/>
+            </plugins>
+            <managementContext>
+                <managementContext createConnector="true" connectorPort="1099"/>
+            </managementContext>
+
+            <persistenceAdapter>
+                <kahaDB directory="${activemq.data}/kahadb"/>
+            </persistenceAdapter>
+              <systemUsage>
+                <systemUsage>
+                    <memoryUsage>
+                        <memoryUsage percentOfJvmHeap="70" />
+                    </memoryUsage>
+                    <storeUsage>
+                        <storeUsage limit="25 gb"/>
+                    </storeUsage>
+                    <tempUsage>
+                        <tempUsage limit="25 gb"/>
+                    </tempUsage>
+                </systemUsage>
+            </systemUsage>
+
+            <transportConnectors>
+                <transportConnector name="openwire" uri="tcp://0.0.0.0:61616?wireFormat.maxFrameSize=524288000"/>
+            </transportConnectors>
+
+            <!-- destroy the spring context on shutdown to stop jetty -->
+            <shutdownHooks>
+                <bean xmlns="http://www.springframework.org/schema/beans" class="org.apache.activemq.hooks.SpringContextHook" />
+            </shutdownHooks>
+
+        </broker>
+        <import resource="jetty.xml"/>
+    </beans>

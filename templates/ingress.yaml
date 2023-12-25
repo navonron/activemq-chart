@@ -5,11 +5,11 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   rules:
-    - host: {{ .Values.url }}
+    - host: {{ .Values.global.url }}
       http:
         paths:
           - path: /
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: {{ .Release.Name }}-service

@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-deployment
+  name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
@@ -21,4 +21,16 @@ spec:
     spec:
       containers:
         - name: {{ .Release.Name }}
-          image: rmohr/activemq:latest
+          image: rmohr/activemq:5.15.9-alpine
+          env:
+            - name: ACTIVEMQ_OPTS
+              value: '-Xms2G -Xmx60G'
+          volumeMounts:
+            - name: {{ .Release.Name }}-conf
+              mountPath: /opt/apache-activemq-5.15.9/conf/activemq.xml
+              subPath: activemq.xml
+      volumes:
+        - name: {{ .Release.Name }}-conf
+          configMap:
+            name: {{ .Release.Name }}-conf
+            defaultMode: 420
