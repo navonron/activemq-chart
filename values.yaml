@@ -9,6 +9,12 @@ global:
     - name: ACTIVEMQ_OPTS
       value: '-Xms2G -Xmx60G'
 
+## @section persistent volume claim (pvc) parameters
+##
+## @param pvc.enable create a pvc?
+## @param pvc.storageClass storageClass name for pvc
+## @param pvc.size pvc size to set (default: 32Mi)
+##
 pvc:
   enable: false
   storageClass: nfs-client
