@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  serviceName: {{ .Release.Name }}
+  template:
+    metadata:
+      name: {{ .Release.Name }}
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Release.Name }}
+          image: rmohr/activemq:5.15.9-alpine
+          env:
+{{- if .Values.global.env }}
+{{ toYaml .Values.global.env | indent 12 }}
+{{- end }}
+          volumeMounts:
+            - name: {{ .Release.Name }}-conf
+              mountPath: /opt/apache-activemq-5.15.9/conf/activemq.xml
+              subPath: activemq.xml
+{{- if .Values.pvc.enable }}
+            - name: {{ .Release.Name }}-pvc
+              mountPath: /data/kahadb
+{{- end }}
+      volumes:
+        - name: {{ .Release.Name }}-conf
+          configMap:
+            name: {{ .Release.Name }}-conf
+            defaultMode: 420
+{{- if .Values.pvc.enable }}
+        - name: {{ .Release.Name }}-pvc
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-claim
+{{- end }}

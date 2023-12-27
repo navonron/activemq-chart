@@ -1,6 +1,15 @@
 ## @section global parameters
 ##
 ## @param global.url service url
+## @param global.env insert env values to StatefulSet container
 ##
 global:
   url: ""
+  env:
+    - name: ACTIVEMQ_OPTS
+      value: '-Xms2G -Xmx60G'
+
+pvc:
+  enable: false
+  storageClass: nfs-client
+  size: 

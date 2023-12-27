@@ -1,0 +1,16 @@
+{{- if .Values.pvc.enable }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-pvc
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    helm.sh/resource-policy: keep
+    volume.beta.kubernetes.io/storage-class: {{ .Values.pvc.storageClass }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.pvc.size | default "32Mi" }}
+{{- end }}
