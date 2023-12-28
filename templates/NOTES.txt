@@ -33,3 +33,19 @@ helm repo add activemq https://ger-is-registry.caas.intel.com/chartrepo/pda
 helm upgrade --install activemq -f values.yaml --namespace <namespace-name>
 
 ## Parameters
+
+### global parameters
+
+| Name                  | Description                                    | Value            |
+| --------------------- | ---------------------------------------------- | ---------------- |
+| `global.url`          | service url                                    | `""`             |
+| `global.env[0].name`  | insert env value name to StatefulSet container | `ACTIVEMQ_OPTS`  |
+| `global.env[0].value` | insert env value to StatefulSet container      | `-Xms2G -Xmx60G` |
+
+### persistent volume claim (pvc) parameters
+
+| Name               | Description                     | Value        |
+| ------------------ | ------------------------------- | ------------ |
+| `pvc.enable`       | create a pvc?                   | `false`      |
+| `pvc.storageClass` | storageClass name for pvc       | `nfs-client` |
+| `pvc.size`         | pvc size to set (default: 32Mi) | `nil`        |

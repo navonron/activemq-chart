@@ -1,0 +1,116 @@
+trigger: none
+
+variables:
+  - group: wiki-token
+  - name: svc-connector
+    value: OnPrem Rancher GER PRE (designml)
+  - name: namespace
+    value: development
+  - name: app-name
+    value: ibi-activemq
+  - name: global-url
+    value: ibi-activemq.intel.com
+  - name: pvc-enable
+    value: false
+  - name: pvc-storageClass
+    value: nfs-client
+  - name: pvc-size
+    value: 32Mi
+
+jobs:
+- job: self_signed_agent
+  displayName: 'activemq chart deployment' 
+  pool: Development
+  steps:      
+    - task: Kubernetes@1
+      displayName: 'k8s cluster (Rancher) login'
+      inputs:
+        connectionType: Kubernetes Service Connection
+        kubernetesServiceEndpoint: $(svc-connector)
+        command: login
+    
+    - task: Bash@3
+      displayName: 'install helm'
+      inputs:
+        targetType: inline
+        script: |
+          apt-get update && apt-get install wget -y
+          wget https://get.helm.sh/helm-v3.13.0-linux-amd64.tar.gz
+          tar xvf helm-v3.13.0-linux-amd64.tar.gz
+          mv linux-amd64/helm /usr/local/bin
+  
+    - task: Bash@3
+      displayName: 'install trivy'
+      inputs:
+        targetType: inline
+        script: |
+          apt-get install wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | tee -a /etc/apt/sources.list.d/trivy.list
+          apt-get update
+          apt-get install trivy
+
+    - task: Bash@3
+      displayName: 'trivy scan'
+      inputs:
+        targetType: 'inline'
+        script: |
+          trivy config .
+    
+    - task: Bash@3
+      displayName: 'install bitnami readme generator' 
+      inputs:
+        targetType: 'inline'
+        script: |
+          git clone https://github.com/bitnami/readme-generator-for-helm
+          cd ./readme-generator-for-helm
+          npm install
+          npm install -g .
+
+    - task: Bash@3
+      displayName: 'generate readme with bitnami' 
+      inputs:
+        targetType: 'inline'
+        script: |
+          readme-generator -v values.yaml --readme README.md
+          readme-generator -v values.yaml --readme templates/NOTES.txt
+          echo -------------------------------------------
+          echo --------------print readme-----------------
+          echo -------------------------------------------
+          cat README.md
+          echo -------------------------------------------
+          echo -------------remove bitnami----------------
+          echo -------------------------------------------
+          cd ..
+          rm -rf ./readme-generator-for-helm
+    
+    - checkout: self
+      persistCredentials: true
+    - task: Bash@3
+      displayName: 'commit changes for README.md and NOTES.txt'
+      inputs:
+        targetType: 'inline'
+        script: |
+          git config --global --edit
+          git commit --amend --reset-author
+
+          git add README.md templates/NOTES.txt
+          git commit -m "Update README.md and NOTES.txt with generated content"
+
+          originalUrl="$(Build.Repository.Uri)"
+          modifiedUrl="${originalUrl#*@}"
+
+          git push https://$(token)@$modifiedUrl HEAD:$(Build.SourceBranchName) --force
+
+    - task: Bash@3
+      displayName: 'install / upgrade chart'
+      inputs:
+        targetType: inline
+        script: |
+          helm upgrade $(app-name) . --atomic --debug --install --insecure-skip-tls-verify --namespace $(namespace) --set global.url=$(global-url) --set pvc.enable=$(pvc-enable) --set pvc.storageClass=$(pvc-storageClass) --set pvc.size=$(pvc-size) 
+
+    - task: git-tag-on-release-task@9
+      displayName: 'add version tag on pr to master'
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+      inputs:
+        staticTagName: '$(Build.BuildId)'

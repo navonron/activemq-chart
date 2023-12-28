@@ -1,7 +1,8 @@
 ## @section global parameters
 ##
 ## @param global.url service url
-## @param global.env insert env values to StatefulSet container
+## @param global.env[0].name insert env value name to StatefulSet container
+## @param global.env[0].value insert env value to StatefulSet container
 ##
 global:
   url: ""
