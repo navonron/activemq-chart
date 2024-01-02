@@ -1,11 +1,28 @@
 {{- if .Values.pvc.enable }}
 apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Release.Name }}-pv
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: {{ .Values.pvc.size | default "32Mi" }}
+  nfs:
+    path: {{ .Values.pvc.nfs.path }}
+    server: {{ .Values.pvc.nfs.server }}
+  storageClassName: {{ .Values.pvc.storageClass }}
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ .Release.Name }}-pvc
   namespace: {{ .Release.Namespace }}
   annotations:
     helm.sh/resource-policy: keep
+    pv.kubernetes.io/bind-completed: 'yes'
+    pv.kubernetes.io/bound-by-controller: 'yes'
     volume.beta.kubernetes.io/storage-class: {{ .Values.pvc.storageClass }}
 spec:
   accessModes:
@@ -13,4 +30,6 @@ spec:
   resources:
     requests:
       storage: {{ .Values.pvc.size | default "32Mi" }}
+  volumeName: {{ .Release.Name }}-pv
+  storageClassName: {{ .Values.pvc.storageClass }}
 {{- end }}

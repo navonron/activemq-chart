@@ -29,7 +29,7 @@ spec:
               mountPath: /opt/apache-activemq-5.15.9/conf/activemq.xml
               subPath: activemq.xml
 {{- if .Values.pvc.enable }}
-            - name: {{ .Release.Name }}-pvc
+            - name: {{ .Release.Name }}-data
               mountPath: /data/kahadb
 {{- end }}
       volumes:
@@ -38,7 +38,7 @@ spec:
             name: {{ .Release.Name }}-conf
             defaultMode: 420
 {{- if .Values.pvc.enable }}
-        - name: {{ .Release.Name }}-pvc
+        - name: {{ .Release.Name }}-data
           persistentVolumeClaim:
-            claimName: {{ .Release.Name }}-claim
+            claimName: {{ .Release.Name }}-pvc
 {{- end }}

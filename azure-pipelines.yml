@@ -11,11 +11,15 @@ variables:
   - name: global-url
     value: ibi-activemq.intel.com
   - name: pvc-enable
-    value: false
+    value: true
   - name: pvc-storageClass
     value: nfs-client
   - name: pvc-size
     value: 32Mi
+  - name: pvc-nfs-path
+    value: /site_disks_designml_tools/caas/shared_storage
+  - name: pvc-nfs-server
+    value: iilc11n01a.iil.intel.com
 
 jobs:
 - job: self_signed_agent
@@ -107,7 +111,7 @@ jobs:
       inputs:
         targetType: inline
         script: |
-          helm upgrade $(app-name) . --atomic --debug --install --insecure-skip-tls-verify --namespace $(namespace) --set global.url=$(global-url) --set pvc.enable=$(pvc-enable) --set pvc.storageClass=$(pvc-storageClass) --set pvc.size=$(pvc-size) 
+          helm upgrade $(app-name) . --atomic --debug --install --insecure-skip-tls-verify --namespace $(namespace) --set global.url=$(global-url) --set pvc.enable=$(pvc-enable) --set pvc.storageClass=$(pvc-storageClass) --set pvc.size=$(pvc-size) --set pvc.nfs.path=$(pvc-nfs-path) --set pvc.nfs.server=$(pvc-nfs-server)
 
     - task: git-tag-on-release-task@9
       displayName: 'add version tag on pr to master'
